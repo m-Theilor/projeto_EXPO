@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -14,6 +15,10 @@ def coletar_kabum_com_selenium(categoria_url):
     Returns:
         list: Lista de dicionários com dados dos produtos.
     """
+
+    subcategoria = extrair_subcategoria((categoria_url))
+    print(f'Subcategoria detectada: {subcategoria}')
+
     # Configurar o navegador (Chrome)
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # Executa o navegador em modo headless (sem interface gráfica)
@@ -49,7 +54,7 @@ def coletar_kabum_com_selenium(categoria_url):
             link = "https://www.kabum.com.br" + item.select_one("a.sc-27518a44-4.kVoakD.productLink")["href"]
 
             produtos.append({
-                "categoria": "Hardware",  # Ajuste conforme a categoria
+                "categoria": subcategoria,
                 "marca": "Desconhecida",  # Adicionar lógica para capturar a marca, se disponível
                 "modelo": nome,
                 "especificacoes": "",  # Especificações detalhadas podem ser adicionadas futuramente
@@ -60,3 +65,23 @@ def coletar_kabum_com_selenium(categoria_url):
         except Exception as e:
             print(f"Erro ao processar item: {e}")
     return produtos
+
+def extrair_subcategoria(url):
+    """
+    Extrai a subcategoria a partir da URL.
+
+    Args:
+        url (str): URL da página de categoria ou subcategoria.
+
+    Returns:
+        str: Nome da subcategoria, ou 'geral' se for a categoria principal.
+    """
+    try:
+        path = urlparse(url).path  # Obtém o caminho da URL
+        partes = path.strip('/').split('/')  # Divide o caminho em partes
+        if len(partes) > 2:  # Garante que existe uma subcategoria
+            return partes[2].replace('-', ' ').capitalize()  # Formata a subcategoria
+        return partes[1].capitalize() if len(partes) > 1 else 'Geral'
+    except Exception as e:
+        print(f"Erro ao extrair subcategoria: {e}")
+        return 'Desconhecida'
